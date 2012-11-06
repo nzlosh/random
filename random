@@ -1,0 +1,66 @@
+#!/usr/bin/env ruby
+
+# Name: random
+# Author: https://github.com/nzlosh/random
+# Description: Generate random strings and numbers.
+# Requires Ruby v1.9 or greater for unicode support.
+#
+# Copyright 2012 C J Henderson
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+class Random
+	attr_accessor :result
+
+	def generate()
+	end
+end
+
+class RandomNumber < Random
+	def generate(type="", min=0, max=1)
+		if type.downcase == "float"
+			@result = rand()
+		else
+			@result = rand(max-min)+min
+		end
+		return @result
+	end
+end
+
+class RandomString < Random
+	def generate(type="", length=8, charset="abcdefghijklmnopqrstuvwxyz0123456789")
+		@result = ""
+		if type.downcase == "unicode"
+			@result = rand(0xC3)
+		else
+			length.times do
+				@result += charset[rand(charset.length)]
+			end
+			return @result
+		end
+	end
+end
+
+
+random_char = RandomString.new
+random_number = RandomNumber.new
+
+puts "Usage of the random character class"
+puts " 4 random ascii characters: " + random_char.generate("", length=4)
+puts "10 random ascii characters: " + random_char.generate
+puts "100 random ascii characters with a character set '234': " + random_char.generate("", 100, "234")
+
+puts "Usage of the random number class"
+puts " random floating point " + random_number.generate("",4,10).to_s
+puts random_number.result
