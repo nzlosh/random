@@ -1,66 +1,98 @@
 #!/usr/bin/env ruby
 
-# Name: random
-# Author: https://github.com/nzlosh/random
-# Description: Generate random strings and numbers.
-# Requires Ruby v1.9 or greater for unicode support.
-#
-# Copyright 2012 C J Henderson
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+debug = false
+
+# The random data source
+require 'securerandom' 
+# The profiler
+require "profile" if debug == true
 
 
-class Random
-	attr_accessor :result
+# To do: run some speed tests using the different ways to generate the
+# string data.
+# Test 1 Generate a given set of strings using the "charset" method below
+# Test 2 urlsafe / substitution method.
+# Test n - We can also brainstorm on other ways to get the strings we want.
 
-	def generate()
-	end
+# SecureRandom.random_number generates 0.<numbers>
+# Generate floating point, convert to string, strip off the lead '0.', and get
+# the number back.
+
+
+# It works, but it's nasty and we can't control the length. :(
+def ran_num
+	result = SecureRandom.random_number.to_s.gsub('0.', '').to_i
+	puts "random_number, fuzzy length => #{result}"
 end
 
-class RandomNumber < Random
-	def generate(type="", min=0, max=1)
-		if type.downcase == "float"
-			@result = rand()
-		else
-			@result = rand(max-min)+min
-		end
-		return @result
-	end
+# We can specify character sets to be used.
+def unsafe
+	set = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+	# This calls random_number generator 32 times, which generates 16 bytes of
+	# random data each time. (very expensive 512 bytes for 32 random characters.)
+	result = Array.new(32){set[SecureRandom.random_number(set.length)]}.join
+	puts "[a-zA-Z0-9], length 32 => #{result}"
 end
 
-class RandomString < Random
-	def generate(type="", length=8, charset="abcdefghijklmnopqrstuvwxyz0123456789")
-		@result = ""
-		if type.downcase == "unicode"
-			@result = rand(0xC3)
-		else
-			length.times do
-				@result += charset[rand(charset.length)]
-			end
-			return @result
-		end
-	end
+def unsafe2
+	set = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+	result = ""
+	# By handling the random bytes ourselves we have performance which matches
+	# the native methods implemented in the SecureRandom module.
+	SecureRandom.random_bytes(32).unpack("C*").each {|a| result += set[a%set.length]}
+	puts "Random Bytes => #{result}"
+
+end
+
+def safe
+	set = '23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ'
+	result = Array.new(12){set[SecureRandom.random_number(set.length)]}.join
+	puts "[a-zA-Z0-9] except confusing chars, length 12 => #{result}"
+end
+
+# SecureRandom.hex will generate set [a-f0-9] for us.
+def hex
+	result = SecureRandom.hex(8)
+	puts "hex, length 8 => #{result}"
+end
+
+# SecureRandom.base64 will generate set [a-zA-Z0-9\+\/\=]; this is sort of
+# useful, but the weird characters are irritating...
+def base64
+	result = SecureRandom.base64
+	puts "base64, fuzzy length => #{result}"
 end
 
 
-random_char = RandomString.new
-random_number = RandomNumber.new
+# urlsafe gives us *almost* [a-zA-Z0-9], but also sometimes - and _. :(
+def url_safe
+	result = SecureRandom.urlsafe_base64
+	puts "urlsafe_base64, fuzzy length => #{result}"
+end
 
-puts "Usage of the random character class"
-puts " 4 random ascii characters: " + random_char.generate("", length=4)
-puts "10 random ascii characters: " + random_char.generate
-puts "100 random ascii characters with a character set '234': " + random_char.generate("", 100, "234")
+# So we can substitute a random number for the "other" char. :P
+def url_safe_subbed
+	result = SecureRandom.urlsafe_base64
+	sub = SecureRandom.random_number(10).to_s
+	result.gsub!(/[\-\_]/, sub)
+	puts "urlsafe_base64, fuzzy length, alphanum only => #{result}"
+	# Yes, this works, but it's hacky as hell, haha.
+end
 
-puts "Usage of the random number class"
-puts " random floating point " + random_number.generate("",4,10).to_s
-puts random_number.result
+
+start = Time.now
+puts "","#{start}: 1 - hex #{hex} (#{Time.now - start})"
+start = Time.now
+puts "","#{start}: 2 - base64 #{base64} (#{Time.now - start})"
+start = Time.now
+puts "","#{start}: 3 - url_safe #{url_safe} (#{Time.now - start})"
+start = Time.now
+puts "","#{start}: 4 - url_safe_subbed #{url_safe_subbed} (#{Time.now - start})"
+start = Time.now
+puts "","#{start}: 5 - safe #{safe} (#{Time.now - start})"
+start = Time.now
+puts "","#{start}: 6 - unsafe2 #{unsafe2} (#{Time.now - start})"
+start = Time.now
+puts "","#{start}: 7 - unsafe #{unsafe} (#{Time.now - start})"
+start = Time.now
+puts "","#{start}: 8 - ran_num #{ran_num} (#{Time.now - start})"
