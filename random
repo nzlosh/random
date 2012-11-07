@@ -4,6 +4,8 @@ debug = false
 
 # The random data source
 require 'securerandom' 
+# The benchmarking tool
+require 'benchmark'
 # The profiler
 require "profile" if debug == true
 
@@ -20,79 +22,107 @@ require "profile" if debug == true
 
 
 # It works, but it's nasty and we can't control the length. :(
-def ran_num
+def ran_num(q = true)
 	result = SecureRandom.random_number.to_s.gsub('0.', '').to_i
-	puts "random_number, fuzzy length => #{result}"
+	if ! q then puts "random_number, fuzzy length => #{result}" end
 end
 
 # We can specify character sets to be used.
-def unsafe
+def charset1(q = true)
 	set = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 	# This calls random_number generator 32 times, which generates 16 bytes of
 	# random data each time. (very expensive 512 bytes for 32 random characters.)
 	result = Array.new(32){set[SecureRandom.random_number(set.length)]}.join
-	puts "[a-zA-Z0-9], length 32 => #{result}"
+	if ! q then puts "[a-zA-Z0-9], length 32, slow => #{result}" end
 end
 
-def unsafe2
+def charset2(q = true)
 	set = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 	result = ""
 	# By handling the random bytes ourselves we have performance which matches
 	# the native methods implemented in the SecureRandom module.
 	SecureRandom.random_bytes(32).unpack("C*").each {|a| result += set[a%set.length]}
-	puts "Random Bytes => #{result}"
+	if ! q then puts "[a-zA-Z0-9], length 32, fast => #{result}" end
 
 end
 
-def safe
+# This is redundant given charset1
+def charset3(q = true)
 	set = '23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ'
-	result = Array.new(12){set[SecureRandom.random_number(set.length)]}.join
-	puts "[a-zA-Z0-9] except confusing chars, length 12 => #{result}"
+	result = Array.new(32){set[SecureRandom.random_number(set.length)]}.join
+	if ! q then puts "[a-zA-Z0-9] except confusing chars, length 32 => #{result}" end
 end
 
 # SecureRandom.hex will generate set [a-f0-9] for us.
-def hex
+def hex(q = true)
 	result = SecureRandom.hex(8)
-	puts "hex, length 8 => #{result}"
+	if ! q then puts "hex, length 8 => #{result}" end
 end
 
 # SecureRandom.base64 will generate set [a-zA-Z0-9\+\/\=]; this is sort of
 # useful, but the weird characters are irritating...
-def base64
+def base64(q = true)
 	result = SecureRandom.base64
-	puts "base64, fuzzy length => #{result}"
+	if ! q then puts "base64, fuzzy length => #{result}" end
 end
 
 
 # urlsafe gives us *almost* [a-zA-Z0-9], but also sometimes - and _. :(
-def url_safe
+def url_safe(q = true)
 	result = SecureRandom.urlsafe_base64
-	puts "urlsafe_base64, fuzzy length => #{result}"
+	if ! q then puts "urlsafe_base64, fuzzy length => #{result}" end
 end
 
 # So we can substitute a random number for the "other" char. :P
-def url_safe_subbed
+def url_safe_subbed(q = true)
 	result = SecureRandom.urlsafe_base64
 	sub = SecureRandom.random_number(10).to_s
 	result.gsub!(/[\-\_]/, sub)
-	puts "urlsafe_base64, fuzzy length, alphanum only => #{result}"
+	if ! q then puts "urlsafe_base64, fuzzy length, alphanum only => #{result}" end
 	# Yes, this works, but it's hacky as hell, haha.
 end
 
+# How many times to run each generator.
+n = 100000
+puts "Generations : #{n}"
 
-start = Time.now
-puts "","#{start}: 1 - hex #{hex} (#{Time.now - start})"
-start = Time.now
-puts "","#{start}: 2 - base64 #{base64} (#{Time.now - start})"
-start = Time.now
-puts "","#{start}: 3 - url_safe #{url_safe} (#{Time.now - start})"
-start = Time.now
-puts "","#{start}: 4 - url_safe_subbed #{url_safe_subbed} (#{Time.now - start})"
-start = Time.now
-puts "","#{start}: 5 - safe #{safe} (#{Time.now - start})"
-start = Time.now
-puts "","#{start}: 6 - unsafe2 #{unsafe2} (#{Time.now - start})"
-start = Time.now
-puts "","#{start}: 7 - unsafe #{unsafe} (#{Time.now - start})"
-start = Time.now
-puts "","#{start}: 8 - ran_num #{ran_num} (#{Time.now - start})"
+puts "Start : #{Time.now}"
+
+Benchmark.bm(15) do |x|
+    x.report('hex') do
+        (0..n).each { hex }
+    end
+    x.report('base64') do
+        (0..n).each { base64 }
+    end
+    x.report('url_safe') do
+        (0..n).each { url_safe }
+    end
+    x.report('url_safe_subbed') do
+        (0..n).each { url_safe_subbed }
+    end
+    x.report('charset1') do
+        (0..n).each { charset1 }
+    end
+    x.report('charset2') do
+        (0..n).each { charset2 }
+    end
+#    x.report('charset3') do
+#        (0..n).each { charset3 }
+#    end
+    x.report('ran_num') do
+        (0..n).each { ran_num }
+    end
+end
+
+puts "End : #{Time.now}"
+
+puts '', "Samples :"
+hex(false)
+base64(false)
+url_safe(false)
+url_safe_subbed(false)
+charset1(false)
+charset2(false)
+#charset3(false)
+ran_num(false)
