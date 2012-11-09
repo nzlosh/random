@@ -8,7 +8,7 @@ require 'securerandom'
 require 'benchmark' 
 # The profiler
 require "profile" if enable_profiler
-# Sintra - http front end to 
+# Sintra - http front end
 require "sinatra" 
 
 # To do: run some speed tests using the different ways to generate the
