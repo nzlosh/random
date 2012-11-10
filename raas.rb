@@ -2,6 +2,8 @@
 
 require 'securerandom' 
 require 'sinatra'
+require 'yaml'
+require 'json'
 if ( @debug == true ) then
     require 'pp'
 end
@@ -40,16 +42,26 @@ end
 
 # The result encodatron.
 def encoder(enc = false, result = nil)
-
     puts "DEBUG: encoder: enc => #{enc}, result => #{result}" unless @debug == false
 
     # Some sort of sanity checking. :P
     raise 'encoding must be defined' unless ! enc == false
     raise 'result must be an array' unless result.is_a?(Array)
 
-    case enc
-        when 't' then erb :result_text, :locals => { :result => result }
-        else erb :dunno
+    type = nil
+    type = case enc
+        when 't' then 'plain'
+        when 'y' then 'yaml'
+        when 'j' then 'json'
+        when 'h' then 'html'
+    end
+
+    puts "DEBUG: encoder: type => #{type}" unless @debug == false
+
+    if ( type == nil ) then
+        raise 'encoding is something weird'
+    else
+        erb "result_#{type}".to_sym, :content_type => "text/#{type}", :locals => { :result => result }
     end
 end
 
