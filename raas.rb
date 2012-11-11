@@ -10,7 +10,7 @@ if ( @debug == true ) then
 end
 
 
-# All numbers and letters by default.
+# Determine the character set to use.
 def charset(type = nil)
     charset = ''
 
@@ -57,15 +57,12 @@ def encoder(enc = false, result = nil)
         when 'j' then 'json'
         when 'h' then 'html'
         when 'x' then 'xml'
+        else raise 'encoding is something strange and terrifying'
     end
 
     puts "DEBUG: encoder: type => #{type}" unless @debug == false
 
-    if ( type == nil ) then
-        raise 'encoding is something weird'
-    else
-        erb "result_#{type}".to_sym, :content_type => "text/#{type}", :locals => { :result => result }
-    end
+    erb "result_#{type}".to_sym, :content_type => "text/#{type}", :locals => { :result => result }
 end
 
 # Routes go here.
