@@ -50,7 +50,7 @@ def encoder(enc = false, result = nil)
 
     type = nil
     type = case enc
-        when 't' then 'plain'
+        when 'p' then 'plain'
         when 'y' then 'yaml'
         when 'j' then 'json'
         when 'h' then 'html'
