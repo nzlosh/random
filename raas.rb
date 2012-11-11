@@ -4,13 +4,14 @@ require 'securerandom'
 require 'sinatra'
 require 'yaml'
 require 'json'
+require 'xmlsimple'
 if ( @debug == true ) then
     require 'pp'
 end
 
 
 # All numbers and letters by default.
-def charset(type = 'ab')
+def charset(type = nil)
     charset = ''
 
     puts "DEBUG: charset: type => #{type}" unless @debug == false
@@ -20,6 +21,7 @@ def charset(type = 'ab')
         when 'as' then '23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ'
         when 'hex' then '0123456789abcdef'
         when 'num' then '0123456789'
+        else raise 'invalid charset'
     end
 
     return charset
@@ -54,6 +56,7 @@ def encoder(enc = false, result = nil)
         when 'y' then 'yaml'
         when 'j' then 'json'
         when 'h' then 'html'
+        when 'x' then 'xml'
     end
 
     puts "DEBUG: encoder: type => #{type}" unless @debug == false
