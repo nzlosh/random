@@ -2,13 +2,16 @@
 
 require 'securerandom' 
 require 'sinatra'
+require 'yaml'
+require 'json'
+require 'xmlsimple'
 if ( @debug == true ) then
     require 'pp'
 end
 
 
-# All numbers and letters by default.
-def charset(type = 'ab')
+# Determine the character set to use.
+def charset(type = nil)
     charset = ''
 
     puts "DEBUG: charset: type => #{type}" unless @debug == false
@@ -18,6 +21,7 @@ def charset(type = 'ab')
         when 'as' then '23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ'
         when 'hex' then '0123456789abcdef'
         when 'num' then '0123456789'
+        else raise 'invalid charset'
     end
 
     return charset
@@ -40,17 +44,25 @@ end
 
 # The result encodatron.
 def encoder(enc = false, result = nil)
-
     puts "DEBUG: encoder: enc => #{enc}, result => #{result}" unless @debug == false
 
     # Some sort of sanity checking. :P
     raise 'encoding must be defined' unless ! enc == false
     raise 'result must be an array' unless result.is_a?(Array)
 
-    case enc
-        when 't' then erb :result_text, :locals => { :result => result }
-        else erb :dunno
+    type = nil
+    type = case enc
+        when 'p' then 'plain'
+        when 'y' then 'yaml'
+        when 'j' then 'json'
+        when 'h' then 'html'
+        when 'x' then 'xml'
+        else raise 'encoding is something strange and terrifying'
     end
+
+    puts "DEBUG: encoder: type => #{type}" unless @debug == false
+
+    erb "result_#{type}".to_sym, :content_type => "text/#{type}", :locals => { :result => result }
 end
 
 # Routes go here.
@@ -83,4 +95,5 @@ end
 
 
 # Houston, we are go for runtime.
+set :show_exceptions, false unless @debug == true
 routes
