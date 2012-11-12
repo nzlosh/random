@@ -95,4 +95,5 @@ end
 
 
 # Houston, we are go for runtime.
+set :show_exceptions, false unless @debug == true
 routes
