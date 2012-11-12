@@ -3,13 +3,13 @@
 enable_profiler = false
 
 # The random data source
-require 'securerandom' 
+require 'securerandom'
 # The benchmarking tool
-require 'benchmark' 
+require 'benchmark'
 # The profiler
 require "profile" if enable_profiler
 # Sintra - http front end
-require "sinatra" 
+#~ require "sinatra"
 
 # To do: run some speed tests using the different ways to generate the
 # string data.
@@ -24,131 +24,182 @@ require "sinatra"
 
 # It works, but it's nasty and we can't control the length. :(
 def ran_num(q = true)
-	result = SecureRandom.random_number.to_s.gsub('0.', '').to_i
-	if ! q then puts "random_number, fuzzy length => #{result}" end
-	return result
+    result = SecureRandom.random_number.to_s.gsub('0.', '').to_i
+    if ! q then puts "random_number, fuzzy length => #{result}" end
+    return result
 end
 
 # We can specify character sets to be used.
 def charset1(q = true)
-	set = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-	# This calls random_number generator 32 times, which generates 16 bytes of
-	# random data each time. (very expensive 512 bytes for 32 random characters.)
-	result = Array.new(32){set[SecureRandom.random_number(set.length)]}.join
-	if ! q then puts "[a-zA-Z0-9], length 32, slow => #{result}" end
-	return result
+    set = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    # This calls random_number generator 32 times, which generates 16 bytes of
+    # random data each time. (very expensive 512 bytes for 32 random characters.)
+    result = Array.new(32){set[SecureRandom.random_number(set.length)]}.join
+    if ! q then puts "[a-zA-Z0-9], length 32, slow => #{result}" end
+    return result
 end
 
 def charset2(q = true)
-	set = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-	result = ""
-	# By handling the random bytes ourselves we have performance which matches
-	# the native methods implemented in the SecureRandom module.
-	SecureRandom.random_bytes(32).unpack("C*").each {|a| result += set[a%set.length]}
-	if ! q then puts "[a-zA-Z0-9], length 32, fast => #{result}" end
-	return result
+    set = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    result = ""
+    # By handling the random bytes ourselves we have performance which matches
+    # the native methods implemented in the SecureRandom module.
+    SecureRandom.random_bytes(32).unpack("C*").each {|a| result += set[a%set.length]}
+    if ! q then puts "[a-zA-Z0-9], length 32, fast => #{result}" end
+    return result
 end
 
 # This is redundant given charset1
 def charset3(q = true)
-	set = '23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ'
-	result = Array.new(32){set[SecureRandom.random_number(set.length)]}.join
-	if ! q then puts "[a-zA-Z0-9] except confusing chars, length 32 => #{result}" end
-	return result
+    set = '23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ'
+    result = Array.new(32){set[SecureRandom.random_number(set.length)]}.join
+    if ! q then puts "[a-zA-Z0-9] except confusing chars, length 32 => #{result}" end
+    return result
 end
 
 # SecureRandom.hex will generate set [a-f0-9] for us.
 def hex(q = true)
-	result = SecureRandom.hex(8)
-	if ! q then puts "hex, length 8 => #{result}" end
-	return result
+    result = SecureRandom.hex(8)
+    if ! q then puts "hex, length 8 => #{result}" end
+    return result
 end
 
 # SecureRandom.base64 will generate set [a-zA-Z0-9\+\/\=]; this is sort of
 # useful, but the weird characters are irritating...
 def base64(q = true )
-	result = SecureRandom.base64
-	if ! q then puts "base64, fuzzy length => #{result}" end
-	return result
+    result = SecureRandom.base64
+    if ! q then puts "base64, fuzzy length => #{result}" end
+    return result
 end
 
 
 # urlsafe gives us *almost* [a-zA-Z0-9], but also sometimes - and _. :(
 def url_safe(q = true)
-	result = SecureRandom.urlsafe_base64
-	if ! q then puts "urlsafe_base64, fuzzy length => #{result}" end
-	return result
+    result = SecureRandom.urlsafe_base64
+    if ! q then puts "urlsafe_base64, fuzzy length => #{result}" end
+    return result
 end
 
 # So we can substitute a random number for the "other" char. :P
 def url_safe_subbed(q = true)
-	result = SecureRandom.urlsafe_base64
-	sub = SecureRandom.random_number(10).to_s
-	result.gsub!(/[\-\_]/, sub)
-	if ! q then puts "urlsafe_base64, fuzzy length, alphanum only => #{result}" end
-	# Yes, this works, but it's hacky as hell, haha.
-	return result
+    result = SecureRandom.urlsafe_base64
+    sub = SecureRandom.random_number(10).to_s
+    result.gsub!(/[\-\_]/, sub)
+    if ! q then puts "urlsafe_base64, fuzzy length, alphanum only => #{result}" end
+    # Yes, this works, but it's hacky as hell, haha.
+    return result
 end
 
 
 def run_benchmark
-	# How many times to run each generator.
-	n = 100000
-	puts "Generations : #{n}"
+    # How many times to run each generator.
+    n = 100000
+    puts "Generations : #{n}"
 
-	puts "Start : #{Time.now}"
+    puts "Start : #{Time.now}"
 
-	Benchmark.bm(15) do |x|
-		x.report('hex') do
-			(0..n).each { hex }
-		end
-		x.report('base64') do
-			(0..n).each { base64 }
-		end
-		x.report('url_safe') do
-			(0..n).each { url_safe }
-		end
-		x.report('url_safe_subbed') do
-			(0..n).each { url_safe_subbed }
-		end
-		x.report('charset1') do
-			(0..n).each { charset1 }
-		end
-		x.report('charset2') do
-			(0..n).each { charset2 }
-		end
-	#    x.report('charset3') do
-	#        (0..n).each { charset3 }
-	#    end
-		x.report('ran_num') do
-			(0..n).each { ran_num }
-		end
-	end
+    Benchmark.bm(15) do |x|
+        x.report('hex') do
+            (0..n).each { hex }
+        end
+        x.report('base64') do
+            (0..n).each { base64 }
+        end
+        x.report('url_safe') do
+            (0..n).each { url_safe }
+        end
+        x.report('url_safe_subbed') do
+            (0..n).each { url_safe_subbed }
+        end
+        x.report('charset1') do
+            (0..n).each { charset1 }
+        end
+        x.report('charset2') do
+            (0..n).each { charset2 }
+        end
+    #    x.report('charset3') do
+    #        (0..n).each { charset3 }
+    #    end
+        x.report('ran_num') do
+            (0..n).each { ran_num }
+        end
+    end
 
-	puts "End : #{Time.now}"
+    puts "End : #{Time.now}"
 
-	puts '', "Samples :"
-	hex(false)
-	base64(false)
-	url_safe(false)
-	url_safe_subbed(false)
-	charset1(false)
-	charset2(false)
-	#charset3(false)
-	ran_num(false)
+    puts '', "Samples :"
+    hex(false)
+    base64(false)
+    url_safe(false)
+    url_safe_subbed(false)
+    charset1(false)
+    charset2(false)
+    #charset3(false)
+    ran_num(false)
 end
 
 def routes
 
-	get "/" do
-		erb :index
-	end
-	
-	post "/raas/" do
-		"OK"
-	end
+    get "/" do
+        erb :index
+    end
+
+    post "/raas/" do
+        "OK"
+    end
+
+
+    #~ post "/random/" do
+        #~ output_select[:enc](random_select[:charset].random(:len, :num))
+    #~ end
 
 end
 
 
-routes
+
+class RandomGenerator
+    attr_accessor :charset, :min, :mix, :count
+
+    def initialize(charset="", min=0, max=8, count=8)
+        @charset = charset
+        @min = min
+        @max = max
+        @count = count
+    end
+
+    def random(min=@min, max=@max, count=@count)
+        result = ""
+        SecureRandom.random_bytes(@max).unpack("C*").each { |a| result += @charset[a%charset.length] }
+        return result
+    end
+
+end
+
+class AsciiGenerator < RandomGenerator
+    def initialize(charset='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', min=@min, max=@max, count=@count)
+        super(charset)
+    end
+end
+
+class SafeAsciiGenerator < AsciiGenerator
+    def initialize(charset = '23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ', min=@min, max=@max, count=@count)
+        super(charset)
+    end
+end
+
+class WordGenerator < RandomGenerator
+    attr_reader :fh
+
+    def initialize(charset="", min=@min, max=@max, count=@count)
+        @fh = File.new("/usr/share/dict/cracklib-small", "r")
+    end
+
+    def finished
+        @fh.close
+    end
+end
+
+
+r = AsciiGenerator.new(nil,nil,max=20,nil)
+puts "Ascii:",r.random
+
