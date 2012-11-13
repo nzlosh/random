@@ -10,11 +10,13 @@ require 'benchmark'
 require "profile" if enable_profiler
 # Sintra - http front end
 #~ require "sinatra"
-
+require 'yaml'
+require 'json'
+require 'xmlsimple'
 
 
 class RandomGenerator
-    attr_accessor :charset, :min, :mix, :count
+    attr_accessor :charset, :min, :mix, :count, :result
 
     def initialize(kwargs={})
         kwargs = { charset: "", min: 0, max: 8, count: 8}.merge(kwargs)
@@ -26,9 +28,27 @@ class RandomGenerator
 
     def random(kwargs={})
         kwargs = { min: @min, max: @max, count: @count}.merge(kwargs)
-        result = ""
-        SecureRandom.random_bytes(@max).unpack("C*").each { |a| result += @charset[a%charset.length] }
-        return result
+        @result = ""
+        SecureRandom.random_bytes(@max).unpack("C*").each { |a| @result += @charset[a%charset.length] }
+        return @result
+    end
+
+    def to_yaml
+        @result.to_yaml
+    end
+
+    def to_xml
+        XmlSimple.xml_out(@result, :RootName => 'raas_results')
+    end
+
+    def to_json
+        JSON.pretty_generate(@result)
+    end
+
+    def to_txt
+    end
+
+    def to_html
     end
 
 end
@@ -38,9 +58,15 @@ class NumberGenerator < RandomGenerator
         kwargs = { min: @min, max: @max}.merge(kwargs)
         @min = kwargs[:min]
         @max = kwargs[:max]
-        puts "min #{@min}  max #{@max}"
         r = @max - @min
-        SecureRandom.random_number(r)+@min
+        @result = ""
+        @result += (SecureRandom.random_number(r)+@min).to_s
+        #~ @count.times do
+            #~ r_num = SecureRandom.random_number(charset.length)
+            #~ @result += @charset[r_num%charset.length]
+        #~ end
+        return @result
+
     end
 end
 
@@ -75,12 +101,12 @@ class WordGenerator < RandomGenerator
         # min - minimum word length
         # count - number of words
         kwargs = { min: @min, max: @max, count: @count}.merge(kwargs)
-        result = ""
+        @result = ""
         @count.times do
             r_num = SecureRandom.random_number(charset.length)
-            result += @charset[r_num%charset.length]
+            @result += @charset[r_num%charset.length]
         end
-        return result
+        return @result
     end
 
     def finished
@@ -256,12 +282,11 @@ end
 
 #run_benchmark
 
-m=1
-x=5
-n=NumberGenerator.new
-4.times do
-    puts n.random(min: m, max: x)
-    m*=10
-    x*=10
+n=NumberGenerator.new(min: 5, max: 11)
+w=WordGenerator.new()
+100.times do
+    #~ puts n.random.to_yaml
+    puts "Number #{n.random.to_json}"
+    puts "Word  #{w.random(count: 1).to_yaml}"
 end
 
