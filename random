@@ -11,6 +11,91 @@ require "profile" if enable_profiler
 # Sintra - http front end
 #~ require "sinatra"
 
+
+
+class RandomGenerator
+    attr_accessor :charset, :min, :mix, :count
+
+    def initialize(kwargs={})
+        kwargs = { charset: "", min: 0, max: 8, count: 8}.merge(kwargs)
+        @charset = kwargs[:charset]
+        @min = kwargs[:min]
+        @max = kwargs[:max]
+        @count = kwargs[:count]
+    end
+
+    def random(kwargs={})
+        kwargs = { min: @min, max: @max, count: @count}.merge(kwargs)
+        result = ""
+        SecureRandom.random_bytes(@max).unpack("C*").each { |a| result += @charset[a%charset.length] }
+        return result
+    end
+
+end
+
+class NumberGenerator < RandomGenerator
+    def random(kwargs={})
+        kwargs = { min: @min, max: @max}.merge(kwargs)
+        @min = kwargs[:min]
+        @max = kwargs[:max]
+        puts "min #{@min}  max #{@max}"
+        r = @max - @min
+        SecureRandom.random_number(r)+@min
+    end
+end
+
+class AsciiGenerator < RandomGenerator
+    def initialize(kwargs={})
+        kwargs = {charset: '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'}.merge(kwargs)
+        super(kwargs)
+    end
+end
+
+class SafeAsciiGenerator < AsciiGenerator
+    def initialize(kwargs={})
+        kwargs = {charset: '23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ'}.merge(kwargs)
+        super(charset)
+    end
+end
+
+class WordGenerator < RandomGenerator
+    attr_reader :fh
+
+    def initialize(kwargs={})
+        kwargs = {charset: []}.merge(kwargs)
+        @fh = File.new("/usr/share/dict/cracklib-small", "r")
+        @fh.each { |line| kwargs[:charset].push(line) }
+        super(kwargs)
+        @fh.close
+    end
+
+
+    def random(kwargs={})
+        # max - maximum word length
+        # min - minimum word length
+        # count - number of words
+        kwargs = { min: @min, max: @max, count: @count}.merge(kwargs)
+        result = ""
+        @count.times do
+            r_num = SecureRandom.random_number(charset.length)
+            result += @charset[r_num%charset.length]
+        end
+        return result
+    end
+
+    def finished
+        @fh.close if @fh.closed? == false
+    end
+end
+
+
+
+
+
+
+
+
+
 # To do: run some speed tests using the different ways to generate the
 # string data.
 # Test 1 Generate a given set of strings using the "charset" method below
@@ -111,31 +196,43 @@ def run_benchmark
         x.report('url_safe_subbed') do
             (0..n).each { url_safe_subbed }
         end
-        x.report('charset1') do
-            (0..n).each { charset1 }
-        end
+        #~ x.report('charset1') do
+            #~ (0..n).each { charset1 }
+        #~ end
         x.report('charset2') do
             (0..n).each { charset2 }
         end
-    #    x.report('charset3') do
-    #        (0..n).each { charset3 }
-    #    end
+        #~ x.report('charset3') do
+            #~ (0..n).each { charset3 }
+        #~ end
         x.report('ran_num') do
             (0..n).each { ran_num }
+        end
+        x.report("class_ascci") do
+            r = AsciiGenerator.new(max: 32)
+            (0..n).each { r.random }
+        end
+        x.report("class_dictionary") do
+            d = WordGenerator.new
+            (0..n).each { d.random }
+        end
+        x.report("class_num") do
+            r = NumberGenerator.new(min:50, max:50000)
+            (0..n).each { r.random }
         end
     end
 
     puts "End : #{Time.now}"
-
-    puts '', "Samples :"
-    hex(false)
-    base64(false)
-    url_safe(false)
-    url_safe_subbed(false)
-    charset1(false)
-    charset2(false)
-    #charset3(false)
-    ran_num(false)
+#~
+    #~ puts '', "Samples :"
+    #~ hex(false)
+    #~ base64(false)
+    #~ url_safe(false)
+    #~ url_safe_subbed(false)
+    #~ charset1(false)
+    #~ charset2(false)
+    #~ charset3(false)
+    #~ ran_num(false)
 end
 
 def routes
@@ -157,49 +254,14 @@ end
 
 
 
-class RandomGenerator
-    attr_accessor :charset, :min, :mix, :count
+#run_benchmark
 
-    def initialize(charset="", min=0, max=8, count=8)
-        @charset = charset
-        @min = min
-        @max = max
-        @count = count
-    end
-
-    def random(min=@min, max=@max, count=@count)
-        result = ""
-        SecureRandom.random_bytes(@max).unpack("C*").each { |a| result += @charset[a%charset.length] }
-        return result
-    end
-
+m=1
+x=5
+n=NumberGenerator.new
+4.times do
+    puts n.random(min: m, max: x)
+    m*=10
+    x*=10
 end
-
-class AsciiGenerator < RandomGenerator
-    def initialize(charset='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', min=@min, max=@max, count=@count)
-        super(charset)
-    end
-end
-
-class SafeAsciiGenerator < AsciiGenerator
-    def initialize(charset = '23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ', min=@min, max=@max, count=@count)
-        super(charset)
-    end
-end
-
-class WordGenerator < RandomGenerator
-    attr_reader :fh
-
-    def initialize(charset="", min=@min, max=@max, count=@count)
-        @fh = File.new("/usr/share/dict/cracklib-small", "r")
-    end
-
-    def finished
-        @fh.close
-    end
-end
-
-
-r = AsciiGenerator.new(nil,nil,max=20,nil)
-puts "Ascii:",r.random
 
