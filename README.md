@@ -1,5 +1,11 @@
-Random
-======
+nzlosh/random
+=============
+
+This is a sandbox for some ideas that we're throwing around. Feel free to
+document those ideas here. :)
+
+raas.rb
+-------
 
 So the API can deal with this : `/:enc/:charset/:len/:num`
 
@@ -9,3 +15,8 @@ So the API can deal with this : `/:enc/:charset/:len/:num`
  * `:num` is the number of results.
 
 Run it like this : `$ ruby ./raas.rb`
+
+random
+------
+
+
