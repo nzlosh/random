@@ -27,7 +27,7 @@ Various random data generator classes.
   * WordGenerator
   * NumberGenerator
 
-A class accepts contraints as to the minimum and maximum range to generate,
+A class accepts constraints as to the minimum and maximum range to generate,
 the count presents the sample size of the data to generate.
 
 Each class is responsible for formatting it's resulting data set.
