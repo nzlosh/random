@@ -33,22 +33,23 @@ class RandomGenerator
         return @result
     end
 
-    def to_yaml
+    def to_yaml()
         @result.to_yaml
     end
 
-    def to_xml
+    def to_xml()
         XmlSimple.xml_out(@result, :RootName => 'raas_results')
     end
 
-    def to_json
+    def to_json()
         JSON.pretty_generate(@result)
     end
 
-    def to_txt
+    def to_txt()
+        return @result
     end
 
-    def to_html
+    def to_html()
     end
 
 end
@@ -66,7 +67,6 @@ class NumberGenerator < RandomGenerator
             #~ @result += @charset[r_num%charset.length]
         #~ end
         return @result
-
     end
 end
 
@@ -282,11 +282,9 @@ end
 
 #run_benchmark
 
-n=NumberGenerator.new(min: 5, max: 11)
-w=WordGenerator.new()
-100.times do
-    #~ puts n.random.to_yaml
-    puts "Number #{n.random.to_json}"
-    puts "Word  #{w.random(count: 1).to_yaml}"
-end
+n=NumberGenerator.new(min: 5, max: 11, count: 100)
+w=WordGenerator.new(min: 0, max: 50, count: 5)
+
+#puts "Number #{n.random.to_yaml}"
+puts "Word  #{w.random()}"
 
