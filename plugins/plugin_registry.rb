@@ -1,5 +1,51 @@
 #!/usr/bin/ruby
 
+#~ class PluginManager
+#~ """
+#~ The Plugin Manager maintains the registry of available
+#~ plugins and the availability in the application.
+#~ """
+    #~ attr_accessor :registry
+
+    #~ def activate(plugin_name)
+        #~ if @registry.key?(plugin_name)
+            #~ puts "ACTIVATE PLUGIN"
+            #~ raise
+        #~ else
+            #~ puts "Unknown plugin named '#{plugin_name}'"
+        #~ end
+    #~ end
+#~
+    #~ def deactivate(plugin_name)
+        #~ if @registry.key?(plugin_name)
+            #~ puts "DEACTIVATE PLUGIN"
+            #~ raise
+        #~ else
+            #~ puts "Unknown plugin named '#{plugin_name}'"
+        #~ end
+    #~ end
+#~ end
+#~
+#~ class Plugin
+    #~ attr_accessor :active
+#~
+    #~ def initialize(kwargs={})
+        #~ @kwargs = { active => true }.merge(kwargs)
+    #~ end
+#~
+    #~ def report
+        #~ puts "Plugin base"
+    #~ end
+#~ end
+#~
+#~
+#~ puts "Start plug-in app"
+#~
+
+#~
+#~ plugin_manager.activate("myPluginTest")
+#~ puts plugin_manager.list_plugins
+
 class PluginRegister
     attr_accessor :registry
 
@@ -8,21 +54,39 @@ class PluginRegister
     end
 
     def register(plugin=nil, active=true)
+        # Expects the plugin CLASS, not the object.
+        puts "Registered plugin '#{plugin.name}'.  Active: #{active}"
         if plugin
-            @registry.merge({"#{plugin.name}": })
+            @registry[plugin.name] = { "plugin" => plugin, "active" => active }
         end
     end
 
     def unregister(plugin_name)
         if @registry.key?(plugin_name)
-            @registry.delete(:"#{plugin_name}")
+            @registry.delete(plugin_name)
         end
     end
 
     def activate(plugin_name)
+        if @registry.key?(plugin_name)
+            puts "#{plugin_name} plugin activated"
+            @registry[plugin_name]["active"] = true
+        else
+            puts "Unknown plugin named '#{plugin_name}'"
+        end
     end
 
     def deactivate(plugin_name)
+        if @registry.key?(plugin_name)
+            puts "#{plugin_name} plugin deactivated"
+            @registry[plugin_name]["active"] = false
+        else
+            puts "Unknown plugin named '#{plugin_name}'"
+        end
+    end
+
+    def list_plugins
+        return @registry.keys
     end
 end
 
@@ -30,9 +94,10 @@ class PluginController
     attr_accessor :plugin, :active
 
     def initialize(plugin=nil, active=true)
-        if plugin:
+        if plugin
             @plugin = plugin
             @active = active
+        end
     end
 end
 
@@ -85,12 +150,32 @@ class WordPlugin < Plugin
     end
 end
 
-def loadPlugins()
-# Function to load plugins from the plugin directory.
+def loadPlugins(plugin_manager)
+    # Purpose: Load plugins from disk and register them with the
+    # plugin manager.
+    # Arguments
+    # @pm - Plugin Manager to register loaded plugins.
+    puts "To do: Use configuration file to find plugin directory"
+    puts "and the plugins to be loaded"
+    @plugin_dir = "./"
+    @plugins = ["core_plugin.rb"]
+
+    @plugins.each { |p|
+        puts "Read plugins #{p}"
+        s=""
+        File.open("#{@plugin_dir}/#{p}", "r").each { |line| s += line }
+        # The plugin specification must insist that the plugin registers
+        # itself with the plugin manager at evaluation time.
+        eval(s)
+    }
 end
 
-w = WordPlugin.new
+registry = PluginRegister.new
 
-puts w.name
-w.available_presentation()
-puts w.to_enum
+registry.register(WordPlugin, true)
+loadPlugins(registry)
+
+puts registry.list_plugins
+
+pluggy_test = registry.registry["Test"]["plugin"].new
+puts pluggy_test.name
