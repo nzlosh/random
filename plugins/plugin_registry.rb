@@ -1,54 +1,6 @@
 #!/usr/bin/ruby
 
-#~ class PluginManager
-#~ """
-#~ The Plugin Manager maintains the registry of available
-#~ plugins and the availability in the application.
-#~ """
-    #~ attr_accessor :registry
-
-    #~ def activate(plugin_name)
-        #~ if @registry.key?(plugin_name)
-            #~ puts "ACTIVATE PLUGIN"
-            #~ raise
-        #~ else
-            #~ puts "Unknown plugin named '#{plugin_name}'"
-        #~ end
-    #~ end
-#~
-    #~ def deactivate(plugin_name)
-        #~ if @registry.key?(plugin_name)
-            #~ puts "DEACTIVATE PLUGIN"
-            #~ raise
-        #~ else
-            #~ puts "Unknown plugin named '#{plugin_name}'"
-        #~ end
-    #~ end
-#~ end
-#~
-#~ class Plugin
-    #~ attr_accessor :active
-#~
-    #~ def initialize(kwargs={})
-        #~ @kwargs = { active => true }.merge(kwargs)
-    #~ end
-#~
-    #~ def report
-        #~ puts "Plugin base"
-    #~ end
-#~ end
-#~
-#~
-#~ puts "Start plug-in app"
-#~
-
-#~
-#~ plugin_manager.activate("myPluginTest")
-#~ puts plugin_manager.list_plugins
-
 class PluginRegister
-    attr_accessor :registry
-
     def initialize()
         @registry = {}
     end
@@ -85,7 +37,14 @@ class PluginRegister
         end
     end
 
-    def list_plugins
+    def plugin_instance(plugin_name=nil)
+        if @registry.key?(plugin_name)
+            return @registry[plugin_name]["plugin"].new
+        end
+    end
+
+    def list_plugins()
+        # to do: implement active/inactive control logic
         return @registry.keys
     end
 end
@@ -113,10 +72,6 @@ class Plugin
         raise "Unimplemented"
     end
 
-    def available_presentation()
-        puts methods()
-    end
-
     def to_txt()
         raise "Unimplemented"
     end
@@ -138,33 +93,21 @@ class Plugin
     end
 end
 
-class NumberPlugin < Plugin
-    def initialize(kwargs={})
-        super({ name: "number"})
-    end
-end
-
-class WordPlugin < Plugin
-    def initialize(kwargs={})
-        super({ name: "word"})
-    end
-end
 
 def loadPlugins(plugin_manager)
-    # Purpose: Load plugins from disk and register them with the
-    # plugin manager.
+    # Purpose: Load Plugins from disk and evaluate the code.
     # Arguments
-    # @pm - Plugin Manager to register loaded plugins.
-    puts "To do: Use configuration file to find plugin directory"
-    puts "and the plugins to be loaded"
-    @plugin_dir = "./"
+    # @plugin_manager - Plugin Manager to register loaded plugins.
+    ### To do: Use configuration file to find plugin directory
+    ### and the plugins to be loaded.
+    @plugin_dir = "."
     @plugins = ["core_plugin.rb"]
 
     @plugins.each { |p|
-        puts "Read plugins #{p}"
+        puts "Read plugins #{@plugin_dir}/#{p}"
         s=""
         File.open("#{@plugin_dir}/#{p}", "r").each { |line| s += line }
-        # The plugin specification must insist that the plugin registers
+        # The plugin specification requires that the plugin registers
         # itself with the plugin manager at evaluation time.
         eval(s)
     }
@@ -172,10 +115,12 @@ end
 
 registry = PluginRegister.new
 
-registry.register(WordPlugin, true)
+# Load core plugins
 loadPlugins(registry)
 
-puts registry.list_plugins
+puts "Available plugins:",registry.list_plugins
 
-pluggy_test = registry.registry["Test"]["plugin"].new
-puts pluggy_test.name
+test = registry.plugin_instance("Test")
+test2 = registry.plugin_instance("WordPlugin")
+
+puts test, test2
