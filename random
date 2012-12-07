@@ -13,114 +13,7 @@ require "profile" if enable_profiler
 require 'yaml'
 require 'json'
 require 'xmlsimple'
-
-
-class RandomGenerator
-    attr_accessor :charset, :min, :mix, :count, :result
-
-    def initialize(kwargs={})
-        kwargs = { charset: "", min: 0, max: 8, count: 8}.merge(kwargs)
-        @charset = kwargs[:charset]
-        @min = kwargs[:min]
-        @max = kwargs[:max]
-        @count = kwargs[:count]
-    end
-
-    def random(kwargs={})
-        kwargs = { min: @min, max: @max, count: @count}.merge(kwargs)
-        @result = ""
-        SecureRandom.random_bytes(@max).unpack("C*").each { |a| @result += @charset[a%charset.length] }
-        return @result
-    end
-
-    def to_yaml()
-        @result.to_yaml
-    end
-
-    def to_xml()
-        XmlSimple.xml_out(@result, :RootName => 'raas_results')
-    end
-
-    def to_json()
-        JSON.pretty_generate(@result)
-    end
-
-    def to_txt()
-        return @result
-    end
-
-    def to_html()
-    end
-
-end
-
-class NumberGenerator < RandomGenerator
-    def random(kwargs={})
-        kwargs = { min: @min, max: @max}.merge(kwargs)
-        @min = kwargs[:min]
-        @max = kwargs[:max]
-        r = @max - @min
-        @result = ""
-        @result += (SecureRandom.random_number(r)+@min).to_s
-        #~ @count.times do
-            #~ r_num = SecureRandom.random_number(charset.length)
-            #~ @result += @charset[r_num%charset.length]
-        #~ end
-        return @result
-    end
-end
-
-class AsciiGenerator < RandomGenerator
-    def initialize(kwargs={})
-        kwargs = {charset: '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'}.merge(kwargs)
-        super(kwargs)
-    end
-end
-
-class SafeAsciiGenerator < AsciiGenerator
-    def initialize(kwargs={})
-        kwargs = {charset: '23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ'}.merge(kwargs)
-        super(charset)
-    end
-end
-
-class WordGenerator < RandomGenerator
-    attr_reader :fh
-
-    def initialize(kwargs={})
-        kwargs = {charset: []}.merge(kwargs)
-        @fh = File.new("/usr/share/dict/cracklib-small", "r")
-        @fh.each { |line| kwargs[:charset].push(line) }
-        super(kwargs)
-        @fh.close
-    end
-
-
-    def random(kwargs={})
-        # max - maximum word length
-        # min - minimum word length
-        # count - number of words
-        kwargs = { min: @min, max: @max, count: @count}.merge(kwargs)
-        @result = ""
-        @count.times do
-            r_num = SecureRandom.random_number(charset.length)
-            @result += @charset[r_num%charset.length]
-        end
-        return @result
-    end
-
-    def finished
-        @fh.close if @fh.closed? == false
-    end
-end
-
-
-
-
-
-
-
-
+require './plugin_framework'
 
 # To do: run some speed tests using the different ways to generate the
 # string data.
@@ -271,20 +164,31 @@ def routes
         "OK"
     end
 
-
     #~ post "/random/" do
         #~ output_select[:enc](random_select[:charset].random(:len, :num))
     #~ end
 
 end
 
-
-
 #run_benchmark
+
+
+# Load core plugins
+registry = Plugin::Register.new
+load_plugin(registry)
+
+puts "Available plugins:",registry.list_plugins
+
+test = registry.plugin_instance("Test")
+test2 = registry.plugin_instance("WordPlugin")
+
+puts test, test2
+
 
 n=NumberGenerator.new(min: 5, max: 11, count: 100)
 w=WordGenerator.new(min: 0, max: 50, count: 5)
 
 #puts "Number #{n.random.to_yaml}"
 puts "Word  #{w.random()}"
+
 
