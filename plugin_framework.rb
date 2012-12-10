@@ -36,9 +36,9 @@ module Plugin
             end
         end
 
-        def plugin_instance(plugin_name=nil)
+        def plugin_instance(plugin_name=nil, kwargs={})
             if @registry.key?(plugin_name)
-                return @registry[plugin_name]["plugin"].new
+                return @registry[plugin_name]["plugin"].new(kwargs)
             end
         end
 
