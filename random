@@ -13,6 +13,8 @@ require "profile" if enable_profiler
 require 'yaml'
 require 'json'
 require 'xmlsimple'
+
+# Application module
 require './plugin_framework'
 
 # To do: run some speed tests using the different ways to generate the
@@ -190,5 +192,4 @@ w=WordGenerator.new(min: 0, max: 50, count: 5)
 
 #puts "Number #{n.random.to_yaml}"
 puts "Word  #{w.random()}"
-
 

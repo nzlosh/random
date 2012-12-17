@@ -6,6 +6,7 @@ module Plugin
 
         def register(plugin=nil, active=true)
             # Expects the plugin CLASS, not the object.
+            raise if plugin == nil
             puts "Registered plugin '#{plugin.name}'.  Active: #{active}"
             if plugin
                 @registry[plugin.name] = { "plugin" => plugin, "active" => active }
