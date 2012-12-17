@@ -1,8 +1,8 @@
 Plugin architecture
 ===================
 
-The plugin framework consists of a Plugin Registry class, Plugin
-Controller class and a Plugin class.
+The plugin framework consists of a _Plugin Registry_ class, _Plugin
+Controller_ class and a _Plugin class_.
 
 The Plugin Registry stores plugin classes.  Plugin instances are requested
 from the Plugin Register using the plugin's internal `name` variable.
@@ -10,16 +10,16 @@ from the Plugin Register using the plugin's internal `name` variable.
 The Plugin Registry's `plugin_instance` method accepts the plugin's name
 and plugin arguments in the form of dictionary.
 
-# Create the foo plugin object with a character set of "abcd".
-`foo_plugin = plugin_manager.register.plugin_instance("foo",{charset: "abcd"})`
+* Create the foo plugin object with a character set of "abcd".
+  `foo_plugin = plugin_manager.register.plugin_instance("foo",{charset: "abcd"})`
 
-# Randomise a data set using the character set passed in by argument.
-`foo_plugin.randomise()`
-or
-`foo_plugin.randomize()`
+* Randomise a data set using the character set passed in by argument.
+  `foo_plugin.randomise()`
+  or
+  `foo_plugin.randomize()`
 
-# Display the randomised character set as text.
-`foo_plugin.to_txt()`
+* Display the randomised character set as text.
+  `foo_plugin.to_txt()`
 
 
 
