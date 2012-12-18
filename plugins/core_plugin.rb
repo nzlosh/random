@@ -115,8 +115,7 @@ class Test < Plugin::Plugin
     end
 end
 
-# The plugin class MUST be registered with the
-# Plugin Manager
+# The plugin class MUST be registered with the Plugin Manager
 plugin_manager.register(Test, true)
 
 

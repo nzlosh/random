@@ -9,7 +9,11 @@ module Plugin
             raise if plugin == nil
             puts "Registered plugin '#{plugin.name}'.  Active: #{active}"
             if plugin
-                @registry[plugin.name] = { "plugin" => plugin, "active" => active }
+                if @registry.key? plugin.name
+                    @registry[plugin.name] = { "plugin" => plugin, "active" => active }
+                else
+                    puts "Key already exists! ", plugin.name
+                end
             end
         end
 
@@ -91,6 +95,8 @@ module Plugin
         def to_json()
             raise "Unimplemented"
         end
+        
+        alias :randomize :randomise
     end
 
 end
@@ -101,11 +107,11 @@ def load_plugin(plugin_manager)
     # @plugin_manager - Plugin Manager to register loaded plugins.
     ### To do: Use configuration file to find plugin directory
     ### and the plugins to be loaded.
-    @plugin_dir = "/home/che/workspace/random/plugins"
-    @plugins = ["core_plugin.rb"]
+    @plugin_dir = $config[:plugin_dir]
+    @plugins = $config[:plugins]
 
     @plugins.each { |p|
-        puts "Read plugins #{@plugin_dir}/#{p}"
+        #~ puts "Read plugins #{@plugin_dir}/#{p}"
         s=""
         File.open("#{@plugin_dir}/#{p}", "r").each { |line| s += line }
         # The plugin specification requires that the plugin registers

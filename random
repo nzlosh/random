@@ -17,6 +17,12 @@ require 'xmlsimple'
 # Application module
 require './plugin_framework'
 
+# Load configuration file
+s=""
+File.open("./random.conf", "r").each { |l| s+= l}
+$config = YAML::load(s)
+
+
 # To do: run some speed tests using the different ways to generate the
 # string data.
 # Test 1 Generate a given set of strings using the "charset" method below
@@ -175,7 +181,7 @@ end
 #run_benchmark
 
 
-# Load core plugins
+# Initialise the plugin framework.
 registry = Plugin::Register.new
 load_plugin(registry)
 
@@ -187,9 +193,9 @@ test2 = registry.plugin_instance("WordPlugin")
 puts test, test2
 
 
-n=NumberGenerator.new(min: 5, max: 11, count: 100)
-w=WordGenerator.new(min: 0, max: 50, count: 5)
-
-#puts "Number #{n.random.to_yaml}"
-puts "Word  #{w.random()}"
+#~ n=NumberGenerator.new(min: 5, max: 11, count: 100)
+#~ w=WordGenerator.new(min: 0, max: 50, count: 5)
+#~ 
+#~ puts "Number #{n.random.to_yaml}"
+#~ puts "Word  #{w.random()}"
 
