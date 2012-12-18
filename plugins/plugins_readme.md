@@ -33,11 +33,13 @@ example the plugin `myPluginfoo` inherits from `Plugin::Plugin` and
 is identified using the name `foo`.  In the case of plugin name collision,
 first loaded wins.
 
-`class myPluginfoo < Plugin::Plugin
+```ruby
+class myPluginfoo < Plugin::Plugin
     def initialize(kwargs={})
         super({ name: "foo" }.merge(kwargs))
     end
-end`
+end
+```
 
 The plugin class inherits from the parent class `Plugin::Plugin`.
 The plugin class is stored by the Plugin Registry object.  Once registered
