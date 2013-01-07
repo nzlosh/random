@@ -1,4 +1,4 @@
-class RandomGenerator
+class RandomGenerator < Plugin::Plugin
     attr_accessor :charset, :min, :mix, :count, :result
 
     def initialize(kwargs={})
@@ -7,9 +7,10 @@ class RandomGenerator
         @min = kwargs[:min]
         @max = kwargs[:max]
         @count = kwargs[:count]
+        super(kwargs)
     end
 
-    def random(kwargs={})
+    def randomise(kwargs={})
         kwargs = { min: @min, max: @max, count: @count}.merge(kwargs)
         @result = ""
         SecureRandom.random_bytes(@max).unpack("C*").each { |a| @result += @charset[a%charset.length] }
@@ -38,7 +39,12 @@ class RandomGenerator
 end
 
 class NumberGenerator < RandomGenerator
-    def random(kwargs={})
+    def initialize(kwargs={})
+        kwargs = { name: "Digits"}.merge(kwargs)
+        super(kwargs)
+    end
+
+    def randomise(kwargs={})
         kwargs = { min: @min, max: @max}.merge(kwargs)
         @min = kwargs[:min]
         @max = kwargs[:max]
@@ -55,15 +61,15 @@ end
 
 class AsciiGenerator < RandomGenerator
     def initialize(kwargs={})
-        kwargs = {charset: '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'}.merge(kwargs)
+        kwargs = {name: "Ascii", charset: '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'}.merge(kwargs)
         super(kwargs)
     end
 end
 
-class SafeAsciiGenerator < AsciiGenerator
+class SafeAsciiGenerator < RandomGenerator
     def initialize(kwargs={})
-        kwargs = {charset: '23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ'}.merge(kwargs)
-        super(charset)
+        kwargs = {name: "SafeAscii", charset: '23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ'}.merge(kwargs)
+        super(kwargs)
     end
 end
 
@@ -71,20 +77,19 @@ class WordGenerator < RandomGenerator
     attr_reader :fh
 
     def initialize(kwargs={})
-        kwargs = {charset: [], dictfile: "/usr/share/dict/cracklib-smaller" }.merge(kwargs)
+        kwargs = {name: "CrackLib", charset: [], dictfile: "/usr/share/dict/cracklib-smaller" }.merge(kwargs)
         if File.exists?(kwargs[:dictfile])
             @fh = File.new(kwargs[:dictfile], "r")
             @fh.each { |line| kwargs[:charset].push(line) }
             @fh.close
         else
-            puts "Warning: Word Generator failed to load dictionary file from #{kwargs[:dictfile]}"
+            $log.warn("Word Generator failed to load dictionary file from #{kwargs[:dictfile]}")
             kwargs[:charset] = [""]
         end
         super(kwargs)
     end
 
-
-    def random(kwargs={})
+    def randomise(kwargs={})
         # max - maximum word length
         # min - minimum word length
         # count - number of words
@@ -103,34 +108,11 @@ class WordGenerator < RandomGenerator
 end
 
 
-
-class Test < Plugin::Plugin
-    def initialize()
-        @name = "myPluginTest"
-    end
-
-    def report
-        super()
-        puts "Extension plugin"
-    end
-end
-
-# The plugin class MUST be registered with the Plugin Manager
-plugin_manager.register(Test, true)
+# Plugin classes MUST be registered with the Plugin Manager to be
+# used in the application.  It's done here.
+@plugin_manager.register(NumberGenerator, true)
+@plugin_manager.register(AsciiGenerator, true)
+@plugin_manager.register(SafeAsciiGenerator, true)
+@plugin_manager.register(WordGenerator, true)
 
 
-class NumberPlugin < Plugin::Plugin
-    def initialize(kwargs={})
-        super({ name: "number" })
-    end
-end
-
-plugin_manager.register(NumberPlugin, true)
-
-class WordPlugin < Plugin::Plugin
-    def initialize(kwargs={})
-        super({ name: "word" })
-    end
-end
-
-plugin_manager.register(WordPlugin, true)

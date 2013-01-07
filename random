@@ -2,6 +2,10 @@
 
 enable_profiler = false
 
+require 'logger'
+$log = Logger.new(STDOUT)
+$log.level = Logger::DEBUG
+
 # The random data source
 require 'securerandom'
 # The benchmarking tool
@@ -18,8 +22,8 @@ require 'xmlsimple'
 require './plugin_framework'
 
 # Load configuration file
-s=""
-File.open("./random.conf", "r").each { |l| s+= l}
+s = ""
+File.open("./random.conf", "r").each { |l| s += l }
 $config = YAML::load(s)
 
 
@@ -182,20 +186,19 @@ end
 
 
 # Initialise the plugin framework.
-registry = Plugin::Register.new
-load_plugin(registry)
+plugin_manager = Plugin::Register.new
+load_plugin(plugin_manager)
 
-puts "Available plugins:",registry.list_plugins
+$log.debug( "Available plugins:" )
+registry.list_plugins.each { |p| $log.debug(p) }
 
-test = registry.plugin_instance("Test")
-test2 = registry.plugin_instance("WordPlugin")
-
-puts test, test2
-
+randomstuff = plugin_manager.plugin_instance("safeascii")
+randomstuff.randomise
+puts randomstuff.to_txt
 
 #~ n=NumberGenerator.new(min: 5, max: 11, count: 100)
 #~ w=WordGenerator.new(min: 0, max: 50, count: 5)
-#~ 
+#~
 #~ puts "Number #{n.random.to_yaml}"
 #~ puts "Word  #{w.random()}"
 

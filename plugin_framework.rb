@@ -1,3 +1,6 @@
+class BadClassException < RuntimeError
+end
+
 module Plugin
     class Register
         def initialize()
@@ -6,29 +9,31 @@ module Plugin
 
         def register(plugin=nil, active=true)
             # Expects the plugin CLASS, not the object.
-            raise if plugin == nil
-            puts "Registered plugin '#{plugin.name}'.  Active: #{active}"
-            if plugin
-                if @registry.key? plugin.name
-                    @registry[plugin.name] = { "plugin" => plugin, "active" => active }
-                else
-                    puts "Key already exists! ", plugin.name
-                end
+            raise BadClassException if not plugin < Plugin
+            # The object instance is required to initialise the plugin's
+            # name and use it for registry's hash key.
+            @p = plugin.new
+            $log.debug("Registered plugin '#{@p.name}'.  Active: #{active}")
+
+            if @registry.key?(@p.name)
+                $log.warn("Plugin '#{@p.name}' skipped because it's already registered!")
+            else
+                @registry[@p.name] = { "plugin" => plugin, "active" => active }
             end
         end
 
         def unregister(plugin_name)
-            if @registry.key?(plugin_name)
+            if @registry.key?(:plugin_name)
                 @registry.delete(plugin_name)
             end
         end
 
         def activate(plugin_name)
-            if @registry.key?(plugin_name)
+            if @registry.key?(:plugin_name)
                 puts "#{plugin_name} plugin activated"
                 @registry[plugin_name]["active"] = true
             else
-                puts "Unknown plugin named '#{plugin_name}'"
+                $log.warn("Unknown plugin named '#{plugin_name}'")
             end
         end
 
@@ -37,14 +42,15 @@ module Plugin
                 puts "#{plugin_name} plugin deactivated"
                 @registry[plugin_name]["active"] = false
             else
-                puts "Unknown plugin named '#{plugin_name}'"
+                $log.warn("Unknown plugin named '#{plugin_name}'")
             end
         end
 
         def plugin_instance(plugin_name=nil, kwargs={})
-            if @registry.key?(plugin_name)
-                return @registry[plugin_name]["plugin"].new(kwargs)
+            if @registry.key?(plugin_name.downcase)
+                return @registry[plugin_name.downcase]["plugin"].new(kwargs)
             end
+            return nil
         end
 
         def list_plugins()
@@ -95,13 +101,13 @@ module Plugin
         def to_json()
             raise "Unimplemented"
         end
-        
+
         alias :randomize :randomise
     end
 
 end
 
-def load_plugin(plugin_manager)
+def load_plugin(pm)
     # Purpose: Load Plugins from disk and evaluate the code.
     # Arguments
     # @plugin_manager - Plugin Manager to register loaded plugins.
@@ -110,12 +116,18 @@ def load_plugin(plugin_manager)
     @plugin_dir = $config[:plugin_dir]
     @plugins = $config[:plugins]
 
+    # By making plugin_manager's scope local to the load_plugin function,
+    # it's scope is extended to the files loaded by require.
+    @plugin_manager = pm
+
     @plugins.each { |p|
-        #~ puts "Read plugins #{@plugin_dir}/#{p}"
-        s=""
-        File.open("#{@plugin_dir}/#{p}", "r").each { |line| s += line }
-        # The plugin specification requires that the plugin registers
-        # itself with the plugin manager at evaluation time.
-        eval(s)
+        begin
+            # The plugin specification requires that the plugin registers
+            # itself with the plugin manager at evaluation time.
+            require "#{@plugin_dir}/#{p}" if File.exists?("#{@plugin_dir}/#{p}")
+        rescue => e
+            puts "#{@plugin_dir}/#{p}: #{e}"
+            e.backtrace.each { |l| puts l }
+        end
     }
 end

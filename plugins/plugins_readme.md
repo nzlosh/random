@@ -62,9 +62,24 @@ applications requirements.  Specifically a plugin must;
 
   * `display` display the data set in a form applicable to the data type.
 
+
+
+
+
+Variables
+=========
+
+Certain program variables are made available to the plugin code at load
+time.
+
+  * `$log` for loggging any messages to the programs log file.
+  
+  * `@plugin_manager` for registering the plugin class.
+  
 Call the Plug Registry object __register__ method after the plugin class'
 definition.  The Plugin Registry object variable is available as `plugin_manager`.
 
 E.g.  To register the NumberPlugin plugin class:
 `plugin_manager.register(NumberPlugin, true)`
 
+  
