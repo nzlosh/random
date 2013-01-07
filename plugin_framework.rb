@@ -57,6 +57,12 @@ module Plugin
             # to do: implement active/inactive control logic
             return @registry.keys
         end
+
+        def has_plugin(plugin_name=nil)
+            return @registry.key?(plugin_name.downcase) if plugin_name
+            return false
+        end
+
     end
 
     class Controller

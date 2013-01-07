@@ -190,7 +190,7 @@ plugin_manager = Plugin::Register.new
 load_plugin(plugin_manager)
 
 $log.debug( "Available plugins:" )
-registry.list_plugins.each { |p| $log.debug(p) }
+plugin_manager.list_plugins.each { |p| $log.debug(p) }
 
 randomstuff = plugin_manager.plugin_instance("safeascii")
 randomstuff.randomise
