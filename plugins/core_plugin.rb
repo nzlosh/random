@@ -51,10 +51,10 @@ class NumberGenerator < RandomGenerator
         r = @max - @min
         @result = ""
         @result += (SecureRandom.random_number(r)+@min).to_s
-        #~ @count.times do
-            #~ r_num = SecureRandom.random_number(charset.length)
-            #~ @result += @charset[r_num%charset.length]
-        #~ end
+        @count.times do
+            r_num = SecureRandom.random_number(charset.length)
+            @result += @charset[r_num%charset.length]
+        end
         return @result
     end
 end
@@ -72,6 +72,15 @@ class SafeAsciiGenerator < RandomGenerator
         super(kwargs)
     end
 end
+
+class HexGenerator < RandomGenerator
+    def initialize(kwargs={})
+        kwargs = {name: "hex", charset: '0123456789abcdef'}.merge(kwargs)
+        super(kwargs)
+    end
+end
+
+
 
 class WordGenerator < RandomGenerator
     attr_reader :fh

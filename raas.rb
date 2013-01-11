@@ -1,20 +1,29 @@
-@debug = true
-
-require 'securerandom' 
+require 'securerandom'
 require 'sinatra'
 require 'yaml'
 require 'json'
 require 'xmlsimple'
-if ( @debug == true ) then
-    require 'pp'
-end
+
+require 'logger'
+$log = Logger.new(STDOUT)
+$log.level = Logger::DEBUG
+
+require 'pp' if $log.level == Logger::DEBUG
+
+# Application module
+require './plugin_framework'
+
+# Load configuration file
+s = ""
+File.open("./raas.conf", "r").each { |l| s += l }
+$config = YAML::load(s)
 
 
 # Determine the character set to use.
 def charset(type = nil)
     charset = ''
 
-    puts "DEBUG: charset: type => #{type}" unless @debug == false
+    $log.debug("charset: type => #{type}")
 
     charset = case type
         when 'ab' then '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -31,7 +40,7 @@ end
 def generator(charset = false, len = 16)
     result = ''
 
-    puts "DEBUG: generator: charset => #{charset}, len => #{len}" unless @debug == false
+    $log.debug("generator: charset => #{charset}, len => #{len}")
 
     # Some sort of sanity checking. :P
     raise 'charset must be defined' unless ! charset == false
@@ -44,7 +53,7 @@ end
 
 # The result encodatron.
 def encoder(enc = false, result = nil)
-    puts "DEBUG: encoder: enc => #{enc}, result => #{result}" unless @debug == false
+    $log.debug("encoder: enc => #{enc}, result => #{result}")
 
     # Some sort of sanity checking. :P
     raise 'encoding must be defined' unless ! enc == false
@@ -60,20 +69,43 @@ def encoder(enc = false, result = nil)
         else raise 'encoding is something strange and terrifying'
     end
 
-    puts "DEBUG: encoder: type => #{type}" unless @debug == false
+    $log.debug("encoder: type => #{type}")
 
     erb "result_#{type}".to_sym, :content_type => "text/#{type}", :locals => { :result => result }
 end
 
 # Routes go here.
-def routes
-	get '/' do
-		erb :index
-	end
+def routes(plugin_manager)
+    get '/' do
+        erb :index
+    end
+
+    get '/:plugin/:presentation/:min/:max/:count' do
+        @r = nil
+        @p = "to_"
+        requested_plugin = params[:plugin]
+        $log.debug(pp params)
+        if plugin_manager.has_plugin(requested_plugin)
+            plugin = plugin_manager.plugin_instance(requested_plugin,{count:88})
+            plugin.randomise
+            $log.debug(pp plugin)
+            @p = "#{@p}#{params[:presentation]}"
+            $log.debug(@p)
+            if plugin.methods.member?(:"#{@p}")
+                @r = plugin.send("#{@p}")
+            else
+                @r = "Unsupported data presentation."
+            end
+        else
+            @r = "Available plugins <br> "
+            plugin_manager.list_plugins.each { |p| @r += "#{p}<br>" }
+        end
+        @r
+    end
 
     # The basic GET API, heh.
     get '/:enc/:charset/:len/:num' do
-        pp params unless @debug == false
+        $log.debug(pp params)
 
         # Determine the character set to use.
         set = charset(params[:charset])
@@ -94,6 +126,13 @@ def routes
 end
 
 
+# Initialise the plugin framework.
+plugin_manager = Plugin::Register.new
+load_plugin(plugin_manager)
+
+$log.debug( "Available plugins:" )
+plugin_manager.list_plugins.each { |p| $log.debug(p) }
+
 # Houston, we are go for runtime.
-set :show_exceptions, false unless @debug == true
-routes
+set :show_exceptions, false unless $log.level == Logger::DEBUG
+routes(plugin_manager)
